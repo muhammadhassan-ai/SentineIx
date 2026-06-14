@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SentinelX — Smart Compiler Assistant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:          #0a0d14;
+  --surface:     #111520;
+  --surface2:    #161b2e;
+  --surface3:    #1c2235;
+  --border:      #1e2640;
+  --border2:     #2a334d;
+  --accent:      #00d4ff;
+  --accent2:     #7c3aed;
+  --accent3:     #10b981;
+  --warn:        #f59e0b;
+  --danger:      #ef4444;
+  --text:        #e2e8f0;
+  --text2:       #94a3b8;
+  --text3:       #4a5568;
+  --font-mono:   'JetBrains Mono', monospace;
+  --font-ui:     'Space Grotesk', sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Header ── */
+header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+  z-index: 10;
+}
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.logo-icon {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+.logo-text {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+.logo-text span { color: var(--accent); }
+
+.header-badges {
+  display: flex;
+  gap: 8px;
+  margin-left: 8px;
+}
+.badge {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 100px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.badge-blue { background: rgba(0,212,255,0.12); color: var(--accent); border: 1px solid rgba(0,212,255,0.25); }
+.badge-purple { background: rgba(124,58,237,0.12); color: #a78bfa; border: 1px solid rgba(124,58,237,0.25); }
+
+.header-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  border: none;
+  border-radius: 8px;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent), #0099cc);
+  color: #000;
+}
+.btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+.btn-primary:active { transform: translateY(0); }
+.btn-ghost {
+  background: var(--surface2);
+  color: var(--text2);
+  border: 1px solid var(--border);
+}
+.btn-ghost:hover { border-color: var(--border2); color: var(--text); }
+.btn-danger {
+  background: rgba(239,68,68,0.15);
+  color: var(--danger);
+  border: 1px solid rgba(239,68,68,0.3);
+}
+.btn-danger:hover { background: rgba(239,68,68,0.25); }
+
+#run-btn {
+  padding: 8px 20px;
+  font-size: 14px;
+}
+#run-btn.loading {
+  background: linear-gradient(135deg, #0099cc, #0066aa);
+  pointer-events: none;
+}
+
+/* ── Main Layout ── */
+.main {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ── Left: Editor Panel ── */
+.editor-panel {
+  width: 42%;
+  min-width: 360px;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border);
+}
+
+.panel-header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.panel-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text2);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.panel-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+.dot-green { background: var(--accent3); }
+.dot-blue  { background: var(--accent); }
+.dot-warn  { background: var(--warn); }
+.dot-red   { background: var(--danger); }
+.dot-purple{ background: #a78bfa; }
+
+.sample-selector {
+  margin-left: auto;
+  display: flex;
+  gap: 4px;
+}
+.sample-btn {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 3px 8px;
+  border: 1px solid var(--border2);
+  background: var(--surface2);
+  color: var(--text2);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.sample-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Editor */
+.editor-wrapper {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  position: relative;
+}
+.line-numbers {
+  width: 48px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 16px 0;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 22px;
+  color: var(--text3);
+  text-align: right;
+  padding-right: 12px;
+  user-select: none;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+#code-editor {
+  flex: 1;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 22px;
+  padding: 16px;
+  border: none;
+  outline: none;
+  resize: none;
+  tab-size: 4;
+  white-space: pre;
+  overflow: auto;
+  caret-color: var(--accent);
+}
+#code-editor::selection { background: rgba(0,212,255,0.2); }
+
+/* Error line highlights */
+.error-overlay {
+  position: absolute;
+  left: 48px;
+  right: 0;
+  pointer-events: none;
+}
+
+/* ── Right: Results Panel ── */
+.results-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Tab system */
+.tabs {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+.tabs::-webkit-scrollbar { display: none; }
+.tab {
+  padding: 10px 18px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text3);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  transition: all 0.12s;
+  letter-spacing: 0.3px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.tab:hover { color: var(--text2); }
+.tab.active { color: var(--accent); border-color: var(--accent); }
+.tab-badge {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 100px;
+  background: rgba(239,68,68,0.2);
+  color: var(--danger);
+}
+.tab-badge.ok { background: rgba(16,185,129,0.2); color: var(--accent3); }
+
+.tab-content {
+  flex: 1;
+  overflow-y: auto;
+  display: none;
+}
+.tab-content.active { display: block; }
+.tab-content::-webkit-scrollbar { width: 6px; }
+.tab-content::-webkit-scrollbar-track { background: var(--bg); }
+.tab-content::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+.content-area {
+  padding: 16px;
+}
+
+/* ── Token Table ── */
+.token-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+.token-table th {
+  background: var(--surface2);
+  padding: 8px 12px;
+  text-align: left;
+  color: var(--text2);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  font-size: 11px;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+}
+.token-table td {
+  padding: 5px 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+.token-table tr:hover td { background: var(--surface2); }
+.token-type {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+.type-keyword  { background: rgba(124,58,237,0.2); color: #a78bfa; }
+.type-ident    { background: rgba(0,212,255,0.12); color: var(--accent); }
+.type-literal  { background: rgba(16,185,129,0.15); color: var(--accent3); }
+.type-operator { background: rgba(245,158,11,0.15); color: var(--warn); }
+.type-delim    { background: rgba(148,163,184,0.12); color: var(--text2); }
+.type-type     { background: rgba(239,68,68,0.15); color: #f87171; }
+.type-error    { background: rgba(239,68,68,0.2); color: var(--danger); }
+
+/* ── AST Viewer ── */
+.ast-container {
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+.ast-node {
+  padding: 3px 0;
+}
+.ast-toggle {
+  cursor: pointer;
+  user-select: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.ast-toggle:hover .ast-label { color: var(--accent); }
+.ast-arrow {
+  width: 12px;
+  height: 12px;
+  color: var(--text3);
+  transition: transform 0.15s;
+  font-size: 10px;
+}
+.ast-label {
+  padding: 1px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.ast-children {
+  margin-left: 20px;
+  border-left: 1px dashed var(--border2);
+  padding-left: 12px;
+}
+.node-Program    { color: #c4b5fd; background: rgba(124,58,237,0.12); }
+.node-VarDecl    { color: #60a5fa; background: rgba(59,130,246,0.12); }
+.node-Assignment { color: #f472b6; background: rgba(236,72,153,0.12); }
+.node-BinaryOp   { color: var(--warn); background: rgba(245,158,11,0.1); }
+.node-UnaryOp    { color: #fb923c; background: rgba(249,115,22,0.1); }
+.node-Identifier { color: var(--accent); background: rgba(0,212,255,0.08); }
+.node-Literal    { color: var(--accent3); background: rgba(16,185,129,0.1); }
+.node-IfStmt     { color: #a78bfa; background: rgba(167,139,250,0.1); }
+.node-WhileStmt  { color: #34d399; background: rgba(52,211,153,0.1); }
+.node-PrintStmt  { color: #f87171; background: rgba(248,113,113,0.1); }
+
+/* ── Error Panel ── */
+.error-card {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.2);
+  border-left: 3px solid var(--danger);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+.warn-card {
+  background: rgba(245,158,11,0.06);
+  border: 1px solid rgba(245,158,11,0.2);
+  border-left: 3px solid var(--warn);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+.error-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.error-type {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--danger);
+}
+.warn-type { color: var(--warn); }
+.error-line {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text2);
+  margin-left: auto;
+}
+.error-msg {
+  font-size: 13px;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.error-suggestion {
+  font-size: 12px;
+  color: var(--text2);
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+.error-suggestion::before { content: "→"; color: var(--accent3); flex-shrink: 0; }
+
+.no-errors {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  gap: 12px;
+}
+.no-errors-icon { font-size: 40px; }
+.no-errors-text { color: var(--accent3); font-size: 15px; font-weight: 600; }
+.no-errors-sub  { color: var(--text3); font-size: 13px; }
+
+/* ── Optimization Panel ── */
+.opt-card {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+.opt-header {
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.opt-type {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--accent3);
+}
+.opt-body { padding: 10px 14px; }
+.opt-diff {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.opt-before, .opt-after {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+.opt-before { background: rgba(239,68,68,0.1); color: #fca5a5; border: 1px solid rgba(239,68,68,0.2); }
+.opt-after  { background: rgba(16,185,129,0.1); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.2); }
+.opt-before::before { content: "− "; color: var(--danger); }
+.opt-after::before  { content: "+ "; color: var(--accent3); }
+.opt-explain { font-size: 12px; color: var(--text2); }
+
+/* ── TAC / IR ── */
+.tac-section { margin-bottom: 16px; }
+.tac-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text2);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tac-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+.tac-code {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 20px;
+  overflow-x: auto;
+}
+.tac-line { color: var(--text2); }
+.tac-label-line { color: #a78bfa; font-weight: 700; }
+.tac-comment { color: var(--text3); font-style: italic; }
+
+/* ── Symbol Table ── */
+.sym-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.sym-table th {
+  background: var(--surface2);
+  padding: 8px 12px;
+  text-align: left;
+  color: var(--text2);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--border);
+}
+.sym-table td {
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.sym-table tr:hover td { background: var(--surface2); }
+.used-yes { color: var(--accent3); }
+.used-no  { color: var(--danger); }
+.dtype-tag {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+.dt-int    { background: rgba(59,130,246,0.15); color: #60a5fa; }
+.dt-float  { background: rgba(245,158,11,0.15); color: var(--warn); }
+.dt-string { background: rgba(16,185,129,0.15); color: var(--accent3); }
+.dt-bool   { background: rgba(124,58,237,0.15); color: #c4b5fd; }
+
+/* ── Output Console ── */
+.console {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.console-header {
+  background: var(--surface2);
+  padding: 6px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.console-title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text2);
+}
+.console-body {
+  padding: 12px 16px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 22px;
+  min-height: 80px;
+}
+.console-line { color: var(--accent3); }
+.console-error { color: var(--danger); }
+.console-empty { color: var(--text3); font-style: italic; }
+
+/* ── Status Bar ── */
+.status-bar {
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 4px 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 11px;
+  color: var(--text3);
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+}
+.status-item { display: flex; align-items: center; gap: 5px; }
+.status-ok   { color: var(--accent3); }
+.status-err  { color: var(--danger); }
+.status-sep  { color: var(--border2); }
+
+/* ── Loading overlay ── */
+.compile-spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(0,0,0,0.3);
+  border-top-color: #000;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Compile highlight animation */
+@keyframes pulse-success {
+  0%   { box-shadow: 0 0 0 0 rgba(16,185,129,0.4); }
+  50%  { box-shadow: 0 0 0 8px rgba(16,185,129,0); }
+  100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+}
+.compile-success { animation: pulse-success 0.5s ease; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  gap: 12px;
+  opacity: 0.5;
+}
+.empty-state-icon { font-size: 48px; }
+.empty-state-text { font-size: 14px; color: var(--text2); }
+
+/* Collapsible AST */
+.collapsed > .ast-children { display: none; }
+.collapsed .ast-arrow { transform: rotate(-90deg); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">⚡</div>
+    <div class="logo-text">Sentinel<span>X</span></div>
+  </div>
+  <div class="header-badges">
+    <span class="badge badge-blue">Compiler</span>
+    <span class="badge badge-purple">v1.0</span>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-ghost" onclick="clearEditor()">✕ Clear</button>
+    <button class="btn btn-primary" id="run-btn" onclick="runCompiler()">
+      ▶ Compile & Run
+    </button>
+  </div>
+</header>
+
+<div class="main">
+
+  <!-- ── Editor Panel ── -->
+  <div class="editor-panel">
+    <div class="panel-header">
+      <div class="panel-dot dot-blue"></div>
+      <span class="panel-title">Source Editor</span>
+      <div class="sample-selector">
+        <button class="sample-btn" onclick="loadSample('hello')">Hello</button>
+        <button class="sample-btn" onclick="loadSample('fibonacci')">Fibonacci</button>
+        <button class="sample-btn" onclick="loadSample('conditions')">Conditions</button>
+        <button class="sample-btn" onclick="loadSample('optimization')">Optimize</button>
+        <button class="sample-btn" onclick="loadSample('errors')">Errors</button>
+      </div>
+    </div>
+    <div class="editor-wrapper">
+      <div class="line-numbers" id="line-numbers">1</div>
+      <textarea id="code-editor" spellcheck="false" autocorrect="off" autocapitalize="off"
+        placeholder="// Write SentinelX code here...
+// Supported: int, float, string, bool
+// if/else, while, print, arithmetic, logic
+
+int x = 5;
+int y = 10;
+if (x < y) {
+    print(&quot;x is smaller&quot;);
+}"
+      ></textarea>
+    </div>
+  </div>
+
+  <!-- ── Results Panel ── -->
+  <div class="results-panel">
+    <div class="tabs">
+      <div class="tab active" data-tab="tokens">
+        <span>🔤</span> Tokens
+        <span class="tab-badge ok" id="token-count">—</span>
+      </div>
+      <div class="tab" data-tab="ast">
+        <span>🌳</span> AST
+      </div>
+      <div class="tab" data-tab="errors">
+        <span>⚠</span> Errors
+        <span class="tab-badge" id="error-count">—</span>
+      </div>
+      <div class="tab" data-tab="symbols">
+        <span>📋</span> Symbols
+      </div>
+      <div class="tab" data-tab="ir">
+        <span>⚙</span> IR / TAC
+      </div>
+      <div class="tab" data-tab="optimize">
+        <span>🚀</span> Optimize
+        <span class="tab-badge ok" id="opt-count">—</span>
+      </div>
+      <div class="tab" data-tab="output">
+        <span>▶</span> Output
+      </div>
+    </div>
+
+    <!-- Token Tab -->
+    <div class="tab-content active" id="tab-tokens">
+      <div class="content-area">
+        <div class="empty-state" id="tokens-empty">
+          <div class="empty-state-icon">🔤</div>
+          <div class="empty-state-text">Compile your code to see tokens</div>
+        </div>
+        <div id="tokens-result" style="display:none">
+          <table class="token-table">
+            <thead><tr><th>#</th><th>Token</th><th>Type</th><th>Line</th><th>Col</th></tr></thead>
+            <tbody id="token-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- AST Tab -->
+    <div class="tab-content" id="tab-ast">
+      <div class="content-area">
+        <div class="empty-state" id="ast-empty">
+          <div class="empty-state-icon">🌳</div>
+          <div class="empty-state-text">Compile to view the Abstract Syntax Tree</div>
+        </div>
+        <div class="ast-container" id="ast-result"></div>
+      </div>
+    </div>
+
+    <!-- Errors Tab -->
+    <div class="tab-content" id="tab-errors">
+      <div class="content-area" id="errors-result">
+        <div class="empty-state">
+          <div class="empty-state-icon">⚠</div>
+          <div class="empty-state-text">No compilation run yet</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Symbol Table -->
+    <div class="tab-content" id="tab-symbols">
+      <div class="content-area">
+        <div class="empty-state" id="sym-empty">
+          <div class="empty-state-icon">📋</div>
+          <div class="empty-state-text">Compile to populate symbol table</div>
+        </div>
+        <div id="sym-result" style="display:none">
+          <table class="sym-table">
+            <thead><tr><th>Name</th><th>Type</th><th>Declared Line</th><th>Used</th></tr></thead>
+            <tbody id="sym-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- IR Tab -->
+    <div class="tab-content" id="tab-ir">
+      <div class="content-area">
+        <div class="empty-state" id="ir-empty">
+          <div class="empty-state-icon">⚙</div>
+          <div class="empty-state-text">Compile to generate IR code</div>
+        </div>
+        <div id="ir-result" style="display:none">
+          <div class="tac-section">
+            <div class="tac-label">Original Three-Address Code</div>
+            <div class="tac-code" id="tac-original"></div>
+          </div>
+          <div class="tac-section">
+            <div class="tac-label" style="color:var(--accent3)">Optimized Code</div>
+            <div class="tac-code" id="tac-optimized"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Optimization Tab -->
+    <div class="tab-content" id="tab-optimize">
+      <div class="content-area">
+        <div class="empty-state" id="opt-empty">
+          <div class="empty-state-icon">🚀</div>
+          <div class="empty-state-text">Compile to see optimizations applied</div>
+        </div>
+        <div id="opt-result"></div>
+      </div>
+    </div>
+
+    <!-- Output Tab -->
+    <div class="tab-content" id="tab-output">
+      <div class="content-area">
+        <div class="console">
+          <div class="console-header">
+            <div class="panel-dot dot-green"></div>
+            <span class="console-title">Program Output</span>
+          </div>
+          <div class="console-body" id="console-body">
+            <span class="console-empty">Run your program to see output...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="status-bar">
+  <span class="status-item" id="status-main">Ready</span>
+  <span class="status-sep">|</span>
+  <span class="status-item" id="status-tokens">Tokens: —</span>
+  <span class="status-sep">|</span>
+  <span class="status-item" id="status-errors">Errors: —</span>
+  <span class="status-sep">|</span>
+  <span class="status-item" id="status-lines">Lines: 1</span>
+  <span class="status-sep" style="margin-left:auto">SentinelX Compiler v1.0</span>
+</div>
+
+<script>
+// ── Tab switching ──────────────────────────────────────────────────────────
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    const target = tab.dataset.tab;
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-' + target).classList.add('active');
+  });
+});
+
+// ── Editor line numbers ────────────────────────────────────────────────────
+const editor = document.getElementById('code-editor');
+const lineNums = document.getElementById('line-numbers');
+
+function updateLineNumbers() {
+  const lines = editor.value.split('\n').length;
+  lineNums.innerHTML = Array.from({length: lines}, (_, i) => i + 1).join('<br>');
+  document.getElementById('status-lines').textContent = `Lines: ${lines}`;
+  // Sync scroll
+  lineNums.scrollTop = editor.scrollTop;
+}
+
+editor.addEventListener('input', updateLineNumbers);
+editor.addEventListener('scroll', () => { lineNums.scrollTop = editor.scrollTop; });
+editor.addEventListener('keydown', e => {
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    const start = editor.selectionStart;
+    editor.value = editor.value.substring(0, start) + '    ' + editor.value.substring(editor.selectionEnd);
+    editor.selectionStart = editor.selectionEnd = start + 4;
+    updateLineNumbers();
+  }
+});
+
+updateLineNumbers();
+
+// ── Samples ────────────────────────────────────────────────────────────────
+const SAMPLES = {
+  hello: `// Basic arithmetic and print
+int x = 10;
+int y = 20;
+int sum = x + y;
+print(sum);`,
+  fibonacci: `// Fibonacci sequence
+int a = 0;
+int b = 1;
+int i = 0;
+while (i < 8) {
+    print(a);
+    int temp = a + b;
+    a = b;
+    b = temp;
+    i = i + 1;
+}`,
+  conditions: `// Grade checker
+int score = 85;
+if (score >= 90) {
+    print("Grade: A");
+} else {
+    if (score >= 80) {
+        print("Grade: B");
+    } else {
+        print("Grade: C");
+    }
+}`,
+  optimization: `// Constant folding & strength reduction
+int x = 3 + 4;
+int y = x * 1;
+int z = y + 0;
+int w = z * 2;
+print(w);`,
+  errors: `// Error detection demo
+int x = 10;
+int x = 20;
+string y = 42;
+print(z);`
+};
+
+function loadSample(name) {
+  editor.value = SAMPLES[name] || '';
+  updateLineNumbers();
+}
+
+function clearEditor() {
+  editor.value = '';
+  updateLineNumbers();
+  resetPanels();
+}
+
+// ── Compiler call ──────────────────────────────────────────────────────────
+async function runCompiler() {
+  const source = editor.value.trim();
+  if (!source) { alert('Write some code first!'); return; }
+
+  const btn = document.getElementById('run-btn');
+  btn.innerHTML = '<span class="compile-spinner"></span> Compiling...';
+  btn.classList.add('loading');
+
+  try {
+    const response = await fetch('/api/compile', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({source})
+    });
+    const data = await response.json();
+    renderResults(data);
+  } catch(e) {
+    showFatalError(e.message);
+  } finally {
+    btn.innerHTML = '▶ Compile & Run';
+    btn.classList.remove('loading');
+  }
+}
+
+// ── Render all results ─────────────────────────────────────────────────────
+function renderResults(data) {
+  const phases = data.phases || {};
+  const errors = data.errors || [];
+  const warnings = data.warnings || [];
+
+  // Tokens
+  if (phases.lexer) renderTokens(phases.lexer.tokens);
+
+  // AST
+  if (phases.parser && phases.parser.ast) renderAST(phases.parser.ast);
+
+  // Errors + Warnings
+  renderErrors(errors, warnings);
+
+  // Symbol table
+  if (phases.semantic) renderSymbols(phases.semantic.symbol_table || []);
+
+  // IR
+  if (phases.ir) renderIR(phases.ir);
+
+  // Optimizations
+  if (phases.optimization) renderOptimizations(phases.optimization);
+
+  // Output
+  renderOutput(data.output || [], (phases.execution || {}).errors || []);
+
+  // Status bar
+  const tokenCount = (phases.lexer || {}).token_count || 0;
+  const errCount = errors.length;
+  document.getElementById('status-tokens').textContent = `Tokens: ${tokenCount}`;
+  document.getElementById('status-errors').textContent =
+    `Errors: ${errCount}`;
+  document.getElementById('status-errors').className =
+    'status-item ' + (errCount > 0 ? 'status-err' : 'status-ok');
+  document.getElementById('status-main').textContent =
+    data.success ? '✓ Compiled successfully' : `✗ ${errCount} error(s)`;
+  document.getElementById('status-main').className =
+    'status-item ' + (data.success ? 'status-ok' : 'status-err');
+
+  // Tab badges
+  document.getElementById('token-count').textContent = tokenCount;
+  document.getElementById('token-count').className = 'tab-badge ok';
+  document.getElementById('error-count').textContent = errCount;
+  document.getElementById('error-count').className = 'tab-badge' + (errCount > 0 ? '' : ' ok');
+  document.getElementById('opt-count').textContent =
+    ((phases.optimization || {}).count || 0);
+}
+
+// ── Token rendering ────────────────────────────────────────────────────────
+const TOKEN_CLASSES = {
+  INT:'type-type', FLOAT:'type-type', STRING:'type-type', BOOL:'type-type',
+  IF:'type-keyword', ELSE:'type-keyword', WHILE:'type-keyword',
+  PRINT:'type-keyword', TRUE:'type-literal', FALSE:'type-literal',
+  INT_LIT:'type-literal', FLOAT_LIT:'type-literal',
+  STRING_LIT:'type-literal', BOOL_LIT:'type-literal',
+  IDENT:'type-ident',
+  PLUS:'type-operator', MINUS:'type-operator', STAR:'type-operator',
+  SLASH:'type-operator', PERCENT:'type-operator',
+  EQ:'type-operator', NEQ:'type-operator', LT:'type-operator',
+  GT:'type-operator', LTE:'type-operator', GTE:'type-operator',
+  AND:'type-operator', OR:'type-operator', NOT:'type-operator',
+  ASSIGN:'type-operator',
+  LPAREN:'type-delim', RPAREN:'type-delim', LBRACE:'type-delim',
+  RBRACE:'type-delim', SEMICOLON:'type-delim',
+  ERROR:'type-error'
+};
+
+function renderTokens(tokens) {
+  document.getElementById('tokens-empty').style.display = 'none';
+  document.getElementById('tokens-result').style.display = 'block';
+  const tbody = document.getElementById('token-tbody');
+  tbody.innerHTML = tokens.map((t, i) => `
+    <tr>
+      <td style="color:var(--text3)">${i+1}</td>
+      <td><code style="color:var(--text)">${escHtml(t.token)}</code></td>
+      <td><span class="token-type ${TOKEN_CLASSES[t.type]||'type-delim'}">${t.type}</span></td>
+      <td style="color:var(--text2)">${t.line}</td>
+      <td style="color:var(--text3)">${t.col}</td>
+    </tr>
+  `).join('');
+}
+
+// ── AST rendering ──────────────────────────────────────────────────────────
+function renderAST(ast) {
+  document.getElementById('ast-empty').style.display = 'none';
+  const container = document.getElementById('ast-result');
+  container.innerHTML = buildASTNode(ast);
+  // Make toggleable
+  container.querySelectorAll('.ast-toggle').forEach(toggle => {
+    toggle.addEventListener('click', () => {
+      toggle.closest('.ast-node').classList.toggle('collapsed');
+    });
+  });
+}
+
+function buildASTNode(node, depth=0) {
+  if (!node) return '';
+  const typeClass = `node-${node.type}`;
+  const children = collectChildren(node);
+  const hasChildren = children.length > 0;
+  const label = buildASTLabel(node);
+
+  if (!hasChildren) {
+    return `<div class="ast-node">
+      <span class="ast-toggle">
+        <span class="ast-arrow" style="visibility:hidden">▶</span>
+        <span class="ast-label ${typeClass}">${label}</span>
+      </span>
+    </div>`;
+  }
+
+  return `<div class="ast-node">
+    <span class="ast-toggle">
+      <span class="ast-arrow">▼</span>
+      <span class="ast-label ${typeClass}">${label}</span>
+    </span>
+    <div class="ast-children">
+      ${children.map(c => buildASTNode(c, depth+1)).join('')}
+    </div>
+  </div>`;
+}
+
+function buildASTLabel(node) {
+  switch(node.type) {
+    case 'Program':    return '📦 Program';
+    case 'VarDecl':    return `📝 VarDecl  ${node.dtype} ${node.name}`;
+    case 'Assignment': return `✏ Assign  ${node.name}`;
+    case 'BinaryOp':   return `➕ BinaryOp  "${node.op}"`;
+    case 'UnaryOp':    return `~ UnaryOp  "${node.op}"`;
+    case 'Identifier': return `🔑 Ident  "${node.name}"`;
+    case 'Literal':    return `💎 Literal  ${node.value}  (${node.dtype})`;
+    case 'IfStmt':     return `🔀 IfStmt`;
+    case 'WhileStmt':  return `🔁 WhileStmt`;
+    case 'PrintStmt':  return `🖨 Print`;
+    default:           return node.type;
+  }
+}
+
+function collectChildren(node) {
+  const out = [];
+  if (node.children) out.push(...node.children);
+  if (node.condition) out.push({...node.condition, _label: 'condition'});
+  if (node.then) out.push(...node.then);
+  if (node.else) out.push(...node.else);
+  if (node.body) out.push(...node.body);
+  return out.filter(Boolean);
+}
+
+// ── Errors ─────────────────────────────────────────────────────────────────
+function renderErrors(errors, warnings) {
+  const container = document.getElementById('errors-result');
+  if (errors.length === 0 && warnings.length === 0) {
+    container.innerHTML = `<div class="no-errors">
+      <div class="no-errors-icon">✅</div>
+      <div class="no-errors-text">No errors detected</div>
+      <div class="no-errors-sub">Code compiled successfully</div>
+    </div>`;
+    return;
+  }
+  container.innerHTML =
+    errors.map(e => errorCard(e, false)).join('') +
+    warnings.map(w => errorCard(w, true)).join('');
+}
+
+function errorCard(e, isWarn) {
+  const cls = isWarn ? 'warn-card' : 'error-card';
+  const typeCls = isWarn ? 'warn-type' : 'error-type';
+  const type = isWarn ? e.type.replace('Warning:', '') : e.type;
+  return `<div class="${cls}">
+    <div class="error-header">
+      <span class="${typeCls}">${isWarn ? '⚠' : '✗'} ${type}</span>
+      ${e.line ? `<span class="error-line">Line ${e.line}</span>` : ''}
+    </div>
+    <div class="error-msg">${escHtml(e.message)}</div>
+    ${e.suggestion ? `<div class="error-suggestion">${escHtml(e.suggestion)}</div>` : ''}
+  </div>`;
+}
+
+// ── Symbol Table ───────────────────────────────────────────────────────────
+function renderSymbols(symbols) {
+  document.getElementById('sym-empty').style.display = 'none';
+  document.getElementById('sym-result').style.display = 'block';
+  const tbody = document.getElementById('sym-tbody');
+  tbody.innerHTML = symbols.map(s => `
+    <tr>
+      <td><code style="color:var(--accent)">${escHtml(s.name)}</code></td>
+      <td><span class="dtype-tag dt-${s.type}">${s.type}</span></td>
+      <td style="color:var(--text2)">${s.line}</td>
+      <td class="${s.used ? 'used-yes' : 'used-no'}">${s.used ? '✓ Yes' : '✗ No'}</td>
+    </tr>
+  `).join('');
+}
+
+// ── IR/TAC ─────────────────────────────────────────────────────────────────
+function renderIR(ir) {
+  document.getElementById('ir-empty').style.display = 'none';
+  document.getElementById('ir-result').style.display = 'block';
+  document.getElementById('tac-original').innerHTML = formatTAC(ir.original || []);
+  document.getElementById('tac-optimized').innerHTML = formatTAC(ir.optimized || []);
+}
+
+function formatTAC(lines) {
+  return lines.map(line => {
+    const trimmed = line.trim();
+    if (trimmed.match(/^L\d+:$/)) {
+      return `<div class="tac-label-line">${escHtml(line)}</div>`;
+    }
+    return `<div class="tac-line">${escHtml(line)}</div>`;
+  }).join('') || '<span style="color:var(--text3)">No code generated</span>';
+}
+
+// ── Optimizations ──────────────────────────────────────────────────────────
+function renderOptimizations(opt) {
+  document.getElementById('opt-empty').style.display = 'none';
+  const container = document.getElementById('opt-result');
+  if (!opt.optimizations || opt.optimizations.length === 0) {
+    container.innerHTML = `<div class="no-errors">
+      <div class="no-errors-icon">✨</div>
+      <div class="no-errors-text">No optimizations applied</div>
+      <div class="no-errors-sub">Code is already optimal</div>
+    </div>`;
+    return;
+  }
+  container.innerHTML = opt.optimizations.map(o => `
+    <div class="opt-card">
+      <div class="opt-header">
+        <span class="opt-type">🚀 ${escHtml(o.type)}</span>
+      </div>
+      <div class="opt-body">
+        <div class="opt-diff">
+          <div class="opt-before">${escHtml(o.before)}</div>
+          <div class="opt-after">${escHtml(o.after)}</div>
+        </div>
+        <div class="opt-explain">${escHtml(o.explanation)}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── Output ─────────────────────────────────────────────────────────────────
+function renderOutput(output, runtimeErrors) {
+  const body = document.getElementById('console-body');
+  const lines = output.map(l => `<div class="console-line">› ${escHtml(String(l))}</div>`);
+  const errs  = runtimeErrors.map(e =>
+    `<div class="console-error">✗ [Line ${e.line}] ${escHtml(e.message)}</div>`);
+  body.innerHTML = [...lines, ...errs].join('') ||
+    '<span class="console-empty">No output produced.</span>';
+
+  // Switch to output tab
+  document.querySelector('[data-tab="output"]').click();
+}
+
+// ── Utils ──────────────────────────────────────────────────────────────────
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function resetPanels() {
+  document.getElementById('token-tbody').innerHTML = '';
+  document.getElementById('tokens-empty').style.display = 'flex';
+  document.getElementById('tokens-result').style.display = 'none';
+  document.getElementById('ast-result').innerHTML = '';
+  document.getElementById('ast-empty').style.display = 'flex';
+  document.getElementById('errors-result').innerHTML = `<div class="empty-state">
+    <div class="empty-state-icon">⚠</div>
+    <div class="empty-state-text">No compilation run yet</div>
+  </div>`;
+  document.getElementById('sym-tbody').innerHTML = '';
+  document.getElementById('sym-empty').style.display = 'flex';
+  document.getElementById('sym-result').style.display = 'none';
+  document.getElementById('ir-empty').style.display = 'flex';
+  document.getElementById('ir-result').style.display = 'none';
+  document.getElementById('opt-empty').style.display = 'flex';
+  document.getElementById('opt-result').innerHTML = '';
+  document.getElementById('console-body').innerHTML =
+    '<span class="console-empty">Run your program to see output...</span>';
+}
+
+function showFatalError(msg) {
+  document.getElementById('errors-result').innerHTML = `<div class="error-card">
+    <div class="error-header"><span class="error-type">Internal Error</span></div>
+    <div class="error-msg">${escHtml(msg)}</div>
+    <div class="error-suggestion">Make sure the backend server is running (python app.py)</div>
+  </div>`;
+}
+
+// Keyboard shortcut: Ctrl+Enter
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+    e.preventDefault();
+    runCompiler();
+  }
+});
+</script>
+</body>
+</html>
